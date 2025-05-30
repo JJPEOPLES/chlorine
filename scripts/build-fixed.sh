@@ -64,8 +64,28 @@ setup_build_environment() {
     log_info "Adding custom configurations..."
     cp -r "$CONFIG_DIR"/* "$BUILD_DIR"/config/
     
-    # Create squashfs hook instead of using includes.chroot_after_packages
+    # Create squashfs configuration in includes.chroot instead of includes.chroot_after_packages
     log_info "Creating squashfs configuration..."
+    
+    # Create includes.chroot directory and etc subdirectory
+    mkdir -p "$BUILD_DIR/config/includes.chroot/etc/"
+    
+    # Create mksquashfs.conf file in includes.chroot/etc
+    cat > "$BUILD_DIR/config/includes.chroot/etc/mksquashfs.conf" << EOL
+# Squashfs configuration for Chlorine Linux
+# This file configures mksquashfs to use a 512K block size for better performance
+
+# Use 512K block size
+-b 512K
+
+# Use maximum compression level
+-Xcompression-level 9
+
+# Use all available processors for compression
+-processors 0
+EOL
+
+    # Also create a hook to ensure the configuration is properly set
     mkdir -p "$BUILD_DIR/config/hooks/live/"
     cat > "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot" << EOL
 #!/bin/bash
@@ -76,8 +96,9 @@ set -e
 # Create directory if it doesn't exist
 mkdir -p /etc
 
-# Create mksquashfs.conf with 512K block size
-cat > /etc/mksquashfs.conf << EOLINNER
+# Ensure mksquashfs.conf exists and has correct content
+if [ ! -f /etc/mksquashfs.conf ]; then
+    cat > /etc/mksquashfs.conf << EOLINNER
 # Squashfs configuration for Chlorine Linux
 # This file configures mksquashfs to use a 512K block size for better performance
 
@@ -90,8 +111,8 @@ cat > /etc/mksquashfs.conf << EOLINNER
 # Use all available processors for compression
 -processors 0
 EOLINNER
-
-echo "SquashFS configured with 512K block size for better performance."
+    echo "Created SquashFS configuration with 512K block size for better performance."
+fi
 EOL
     chmod +x "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot"
     
