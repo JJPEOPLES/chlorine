@@ -1,6 +1,6 @@
 # Chlorine Linux Build Instructions
 
-This guide explains how to build Chlorine Linux from source using the fixed build script.
+This guide explains how to build Chlorine Linux from source using the fixed build script and how to upload ISO files to a storage service.
 
 ## Prerequisites
 
@@ -20,19 +20,26 @@ git clone https://github.com/JJPEOPLES/chlorine.git
 cd chlorine
 ```
 
-### Step 2: Run the Fixed Build Script
+### Step 2: Run the Clean Build Script
 
-Use the fixed build script to avoid issues with the `includes.chroot_after_packages` directory:
+Use the clean build script to avoid issues with the `includes.chroot_after_packages` directory:
+
+```bash
+./scripts/clean-build.sh
+```
+
+The script will:
+1. Clean up any problematic directories
+2. Check for required dependencies
+3. Set up the build environment
+4. Configure the ISO
+5. Build the ISO image
+
+If you encounter any issues with the clean build script, you can try running the fixed build script directly:
 
 ```bash
 sudo ./scripts/build-fixed.sh
 ```
-
-The script will:
-1. Check for required dependencies
-2. Set up the build environment
-3. Configure the ISO
-4. Build the ISO image
 
 ### Step 3: Find the ISO
 
@@ -41,6 +48,23 @@ Once the build process completes successfully, you'll find the ISO file at:
 ```
 /path/to/chlorine/iso/chlorine-linux.iso
 ```
+
+## Uploading ISO Files
+
+For distributing ISO files, we use a separate upload mechanism instead of storing them in the Git repository.
+
+### Step 1: Run the Upload Script
+
+```bash
+./scripts/upload-iso.sh
+```
+
+The script will:
+1. Check if rclone is installed (and help you install it if needed)
+2. Guide you through configuring a remote storage service (first time only)
+3. Upload all ISO files from the `iso` directory
+4. Generate and upload SHA256 checksums
+5. Create a listing of available ISO files
 
 ## Troubleshooting
 
