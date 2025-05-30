@@ -20,24 +20,28 @@ git clone https://github.com/JJPEOPLES/chlorine.git
 cd chlorine
 ```
 
-### Step 2: Run the Clean Build Script
+### Step 2: Run the Fresh Build Script
 
-Use the clean build script to avoid issues with the `includes.chroot_after_packages` directory:
+Use the fresh build script to completely clean the build directory and start fresh:
 
 ```bash
-./scripts/clean-build.sh
+./scripts/fresh-build.sh
 ```
 
 The script will:
-1. Clean up any problematic directories
+1. Completely remove and recreate the build directory
 2. Check for required dependencies
 3. Set up the build environment
 4. Configure the ISO
 5. Build the ISO image
 
-If you encounter any issues with the clean build script, you can try running the fixed build script directly:
+If you encounter issues with the fresh build script, you can try these alternatives:
 
 ```bash
+# Clean build script (cleans problematic directories)
+./scripts/clean-build.sh
+
+# Fixed build script (direct build with fixes)
 sudo ./scripts/build-fixed.sh
 ```
 
