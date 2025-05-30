@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Chlorine Manual Installer
+Comment=Install Chlorine Linux manually if Calamares doesn't work
+Exec=sudo /usr/local/bin/chlorine-manual-install
+Icon=system-software-install
+Terminal=true
+Type=Application
+Categories=System;
+Keywords=install;installer;

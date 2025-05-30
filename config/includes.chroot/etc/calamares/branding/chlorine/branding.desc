@@ -1,0 +1,24 @@
+---
+componentName: chlorine
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+strings:
+  productName: Chlorine Linux
+  shortProductName: Chlorine
+  version: 1.0
+  shortVersion: 1.0
+  versionedName: Chlorine Linux 1.0
+  shortVersionedName: Chlorine 1.0
+  bootloaderEntryName: Chlorine
+  productUrl: https://github.com/yourusername/chlorine
+  supportUrl: https://github.com/yourusername/chlorine/issues
+  welcomeMessage: "Chlorine -- clean yourself u sweaty piece of shit"
+images:
+  productLogo: "/usr/share/chlorine-branding/logo.svg"
+  productIcon: "/usr/share/chlorine-branding/logo.svg"
+  productWelcome: "/usr/share/chlorine-branding/background.svg"
+slideshow: "show.qml"
+style:
+  sidebarBackground: "#2d2d2d"
+  sidebarText: "#FFFFFF"
+  sidebarTextSelect: "#4DD0E1"

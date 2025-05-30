@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+# Download and install the custom kernel
+cd /tmp
+wget -O linux-image-custom.deb https://example.com/path/to/your/custom/kernel.deb
+dpkg -i linux-image-custom.deb
+update-initramfs -u

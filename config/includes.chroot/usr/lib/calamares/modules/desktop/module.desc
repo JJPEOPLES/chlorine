@@ -1,0 +1,5 @@
+---
+type: "view"
+name: "desktop"
+interface: "python"
+script: "main.py"

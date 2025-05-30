@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+# Create a symlink to the Synaptic icon
+if [ -f /usr/share/pixmaps/synaptic.png ]; then
+    ln -sf /usr/share/pixmaps/synaptic.png /usr/share/pixmaps/gapt.png
+fi

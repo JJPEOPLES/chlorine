@@ -1,0 +1,2 @@
+# Allow running Calamares without password
+ALL ALL=NOPASSWD: /usr/bin/calamares

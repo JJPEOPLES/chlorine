@@ -1,0 +1,25 @@
+---
+componentName: chlorine
+
+strings:
+    productName:         Chlorine Linux
+    shortProductName:    Chlorine
+    version:             1.0
+    shortVersion:        1.0
+    versionedName:       Chlorine Linux 1.0
+    shortVersionedName:  Chlorine 1.0
+    bootloaderEntryName: Chlorine
+    productUrl:          https://example.com/
+    supportUrl:          https://example.com/support
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+
+style:
+   sidebarBackground:    "#2c3133"
+   sidebarText:          "#FFFFFF"
+   sidebarTextSelect:    "#4d7079"

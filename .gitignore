@@ -1,0 +1,27 @@
+# Build artifacts
+build/
+*.iso
+*.img
+*.log
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Netlify
+.netlify/
+
+# Large files that should be uploaded separately
+website/downloads/*.iso

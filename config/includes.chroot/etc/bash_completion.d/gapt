@@ -1,0 +1,27 @@
+# bash completion for gapt
+
+_gapt() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    
+    # Basic options
+    opts="gui install remove update upgrade search show list"
+    
+    # Complete with apt options if not using "gui"
+    if [[ ${prev} != "gapt" || ${cur} != "gui" ]]; then
+        # Use apt completion if available
+        if [[ -f /usr/share/bash-completion/completions/apt ]]; then
+            . /usr/share/bash-completion/completions/apt
+            _apt
+            return 0
+        fi
+    fi
+    
+    # Default completion
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+
+complete -F _gapt gapt

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# This script sets up the desktop packages based on the user's selection in Calamares
+
+# Get the selected desktop environment from Calamares
+DESKTOP_ENV=$(cat /tmp/desktop_choice 2>/dev/null || echo "kde")
+
+# Set the packages based on the desktop environment
+case "$DESKTOP_ENV" in
+    kde)
+        PACKAGES="plasma-desktop sddm konsole dolphin kate kwrite ark gwenview okular"
+        ;;
+    gnome)
+        PACKAGES="gnome-shell gdm3 gnome-terminal nautilus gedit eog evince"
+        ;;
+    xfce|*)
+        PACKAGES="xfce4 xfce4-terminal thunar mousepad ristretto xfce4-screenshooter"
+        ;;
+esac
+
+# Export the packages for Calamares to use
+echo "DESKTOP_PACKAGES=\"$PACKAGES\"" > /tmp/desktop_packages.conf
+
+echo "Desktop packages set to: $PACKAGES"

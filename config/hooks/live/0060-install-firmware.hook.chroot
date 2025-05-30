@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+# Update package lists
+apt-get update
+
+# Install firmware packages
+apt-get install -y firmware-linux firmware-linux-nonfree firmware-realtek firmware-atheros firmware-iwlwifi firmware-bnx2 firmware-bnx2x firmware-brcm80211 firmware-misc-nonfree firmware-amd-graphics firmware-intel-sound firmware-sof-signed firmware-netxen firmware-zd1211 firmware-cavium firmware-qcom-media firmware-qcom-soc firmware-samsung firmware-ti-connectivity wireless-tools wpasupplicant network-manager bluez bluetooth
+
+# Install web development packages
+apt-get install -y nodejs npm php php-cli php-common php-curl php-fpm php-gd php-json php-mbstring php-mysql php-xml php-zip firefox-esr
+
+echo "Firmware and web development packages installation completed."

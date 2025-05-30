@@ -1,5 +1,5 @@
 #!/bin/bash
-# Chlorine Linux Build Script (Fixed version)
+# Chlorine Linux Build Script
 
 set -e
 
@@ -27,6 +27,7 @@ mkdir -p "$ISO_DIR"
 # Clean the build directory
 clean_build_directory() {
     log_info "Cleaning build directory..."
+    cd "$BUILD_DIR"
     lb clean --all
     log_info "Build directory cleaned completely."
 }
@@ -43,7 +44,7 @@ setup_build_environment() {
         --archive-areas "main contrib non-free non-free-firmware" \
         --apt-indices false \
         --apt-recommends false \
-        --debian-installer false \
+        --debian-installer none \
         --mirror-bootstrap "http://deb.debian.org/debian/" \
         --mirror-binary "http://deb.debian.org/debian/" \
         --mirror-binary-security "http://security.debian.org/debian-security/" \
@@ -53,6 +54,9 @@ setup_build_environment() {
         --binary-filesystem ext4 \
         --binary-images iso-hybrid
     
+    # Set compression to gzip (valid values are gzip, bzip2, lzma, xz)
+    export LB_COMPRESSION="gzip"
+    
     # Verify that the configuration was created
     if [ ! -f "config/binary" ]; then
         log_error "Failed to create live-build configuration."
@@ -61,16 +65,26 @@ setup_build_environment() {
     
     # Copy our custom configurations
     log_info "Adding custom configurations..."
-    cp -r "$CONFIG_DIR"/* "$BUILD_DIR"/config/
+    if [ -d "$CONFIG_DIR" ]; then
+        cp -r "$CONFIG_DIR"/* "$BUILD_DIR"/config/
+    fi
     
-    # Create squashfs configuration in includes.chroot instead of includes.chroot_after_packages
-    log_info "Creating squashfs configuration..."
+    # Update binary configuration for squashfs
+    log_info "Configuring squashfs options..."
+    if [ -f "$BUILD_DIR/config/binary" ]; then
+        # Add squashfs options if not already present
+        if ! grep -q "LB_SQUASHFS_COMP_OPT" "$BUILD_DIR/config/binary"; then
+            echo '# Set squashfs compression options (512K block size for better performance)' >> "$BUILD_DIR/config/binary"
+            echo 'LB_SQUASHFS_COMP_OPT="-b 512K -Xcompression-level 9"' >> "$BUILD_DIR/config/binary"
+        fi
+    fi
     
-    # Create includes.chroot directory and etc subdirectory
-    mkdir -p "$BUILD_DIR/config/includes.chroot/etc/"
+    # Create squashfs configuration directory
+    mkdir -p "$BUILD_DIR/config/includes.chroot_after_packages/etc/"
     
-    # Create mksquashfs.conf file in includes.chroot/etc
-    cat > "$BUILD_DIR/config/includes.chroot/etc/mksquashfs.conf" << EOL
+    # Create squashfs configuration file
+    log_info "Creating squashfs configuration file..."
+    cat > "$BUILD_DIR/config/includes.chroot_after_packages/etc/mksquashfs.conf" << EOL
 # Squashfs configuration for Chlorine Linux
 # This file configures mksquashfs to use a 512K block size for better performance
 
@@ -83,9 +97,12 @@ setup_build_environment() {
 # Use all available processors for compression
 -processors 0
 EOL
-
-    # Also create a hook to ensure the configuration is properly set
+    
+    # Create hooks directory
     mkdir -p "$BUILD_DIR/config/hooks/live/"
+    
+    # Create squashfs hook
+    log_info "Creating squashfs hook..."
     cat > "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot" << EOL
 #!/bin/bash
 # Configure squashfs options for Chlorine Linux
@@ -95,9 +112,8 @@ set -e
 # Create directory if it doesn't exist
 mkdir -p /etc
 
-# Ensure mksquashfs.conf exists and has correct content
-if [ ! -f /etc/mksquashfs.conf ]; then
-    cat > /etc/mksquashfs.conf << EOLINNER
+# Create mksquashfs.conf with 512K block size
+cat > /etc/mksquashfs.conf << EOLINNER
 # Squashfs configuration for Chlorine Linux
 # This file configures mksquashfs to use a 512K block size for better performance
 
@@ -110,8 +126,8 @@ if [ ! -f /etc/mksquashfs.conf ]; then
 # Use all available processors for compression
 -processors 0
 EOLINNER
-    echo "Created SquashFS configuration with 512K block size for better performance."
-fi
+
+echo "SquashFS configured with 512K block size for better performance."
 EOL
     chmod +x "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot"
     

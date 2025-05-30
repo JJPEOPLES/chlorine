@@ -1,0 +1,273 @@
+#!/bin/bash
+
+# Chlorine Linux Manual Installation Script
+# To be used if Calamares installer doesn't work in the live environment
+
+# Function to display colored text
+print_color() {
+    local color=$1
+    local text=$2
+    
+    case $color in
+        "red") echo -e "\e[31m$text\e[0m" ;;
+        "green") echo -e "\e[32m$text\e[0m" ;;
+        "yellow") echo -e "\e[33m$text\e[0m" ;;
+        "blue") echo -e "\e[34m$text\e[0m" ;;
+        "magenta") echo -e "\e[35m$text\e[0m" ;;
+        "cyan") echo -e "\e[36m$text\e[0m" ;;
+        *) echo "$text" ;;
+    esac
+}
+
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    print_color "red" "This script must be run as root. Please use sudo or switch to root user."
+    exit 1
+fi
+
+# Welcome message
+clear
+print_color "cyan" "=================================================="
+print_color "cyan" "       Chlorine Linux Manual Installation"
+print_color "cyan" "=================================================="
+print_color "yellow" "This script will help you install Chlorine Linux if the"
+print_color "yellow" "Calamares installer is not working in the live environment."
+print_color "yellow" "Make sure you have already prepared a partition for installation."
+print_color "yellow" "You can use GParted or GNOME Disks to create partitions."
+echo ""
+print_color "red" "WARNING: This will erase data on the selected partition!"
+print_color "red" "Make sure you have backed up any important data."
+echo ""
+read -p "Press Enter to continue or Ctrl+C to cancel..."
+
+# Function to select from options
+select_option() {
+    local prompt=$1
+    shift
+    local options=("$@")
+    local selected
+    
+    echo "$prompt"
+    select selected in "${options[@]}"; do
+        if [ -n "$selected" ]; then
+            echo "$selected"
+            return
+        else
+            print_color "red" "Invalid selection. Please try again."
+        fi
+    done
+}
+
+# Get target device
+echo ""
+print_color "magenta" "Available disks and partitions:"
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT,FSTYPE | grep -v loop
+echo ""
+print_color "yellow" "Please enter the target partition (e.g., /dev/sda1):"
+read TARGET_PARTITION
+
+# Validate partition exists
+if [ ! -b "$TARGET_PARTITION" ]; then
+    print_color "red" "Error: $TARGET_PARTITION is not a valid block device."
+    exit 1
+fi
+
+# Select filesystem
+FILESYSTEM=$(select_option "Select filesystem type:" "ext4" "btrfs" "xfs")
+
+# Select desktop environment
+DESKTOP_ENV=$(select_option "Select desktop environment:" "kde-plasma" "gnome" "xfce" "lxqt" "cinnamon" "mate" "i3" "minimal")
+
+# Select display manager
+DISPLAY_MANAGER=$(select_option "Select display manager:" "sddm" "gdm" "lightdm" "lxdm")
+
+# Select hostname
+echo ""
+print_color "yellow" "Enter hostname for your system:"
+read HOSTNAME
+HOSTNAME=${HOSTNAME:-chlorine}
+
+# Select username
+echo ""
+print_color "yellow" "Enter username for your system:"
+read USERNAME
+USERNAME=${USERNAME:-user}
+
+# Set password
+echo ""
+print_color "yellow" "Enter password for $USERNAME:"
+read -s PASSWORD
+echo ""
+print_color "yellow" "Confirm password:"
+read -s PASSWORD_CONFIRM
+echo ""
+
+if [ "$PASSWORD" != "$PASSWORD_CONFIRM" ]; then
+    print_color "red" "Passwords do not match. Exiting."
+    exit 1
+fi
+
+# Confirm installation
+echo ""
+print_color "cyan" "=================================================="
+print_color "cyan" "                Installation Summary"
+print_color "cyan" "=================================================="
+print_color "yellow" "Target partition: $TARGET_PARTITION"
+print_color "yellow" "Filesystem: $FILESYSTEM"
+print_color "yellow" "Desktop environment: $DESKTOP_ENV"
+print_color "yellow" "Display manager: $DISPLAY_MANAGER"
+print_color "yellow" "Hostname: $HOSTNAME"
+print_color "yellow" "Username: $USERNAME"
+echo ""
+print_color "red" "WARNING: This will format $TARGET_PARTITION and install Chlorine Linux."
+print_color "red" "All data on $TARGET_PARTITION will be lost!"
+echo ""
+read -p "Type 'yes' to confirm and start installation: " CONFIRM
+
+if [ "$CONFIRM" != "yes" ]; then
+    print_color "red" "Installation cancelled."
+    exit 1
+fi
+
+# Start installation
+print_color "green" "Starting installation..."
+
+# Format the partition
+print_color "blue" "Formatting $TARGET_PARTITION as $FILESYSTEM..."
+case $FILESYSTEM in
+    "ext4")
+        mkfs.ext4 -F "$TARGET_PARTITION"
+        ;;
+    "btrfs")
+        mkfs.btrfs -f "$TARGET_PARTITION"
+        ;;
+    "xfs")
+        mkfs.xfs -f "$TARGET_PARTITION"
+        ;;
+esac
+
+if [ $? -ne 0 ]; then
+    print_color "red" "Failed to format partition. Exiting."
+    exit 1
+fi
+
+# Mount the partition
+print_color "blue" "Mounting $TARGET_PARTITION to /mnt..."
+mount "$TARGET_PARTITION" /mnt
+if [ $? -ne 0 ]; then
+    print_color "red" "Failed to mount partition. Exiting."
+    exit 1
+fi
+
+# Copy the live system to the target partition
+print_color "blue" "Copying system files to $TARGET_PARTITION..."
+rsync -av --exclude='/mnt' --exclude='/proc' --exclude='/sys' --exclude='/dev' --exclude='/run' --exclude='/media' --exclude='/tmp' / /mnt/
+if [ $? -ne 0 ]; then
+    print_color "red" "Failed to copy system files. Exiting."
+    umount /mnt
+    exit 1
+fi
+
+# Create necessary directories
+print_color "blue" "Creating necessary directories..."
+mkdir -p /mnt/{proc,sys,dev,run,media,tmp}
+
+# Create fstab
+print_color "blue" "Creating fstab..."
+UUID=$(blkid -s UUID -o value "$TARGET_PARTITION")
+echo "UUID=$UUID / $FILESYSTEM defaults 0 1" > /mnt/etc/fstab
+
+# Set hostname
+print_color "blue" "Setting hostname to $HOSTNAME..."
+echo "$HOSTNAME" > /mnt/etc/hostname
+echo "127.0.1.1 $HOSTNAME" >> /mnt/etc/hosts
+
+# Create user
+print_color "blue" "Creating user $USERNAME..."
+chroot /mnt useradd -m -s /bin/bash "$USERNAME"
+echo "$USERNAME:$PASSWORD" | chroot /mnt chpasswd
+chroot /mnt usermod -aG sudo,audio,video,netdev,plugdev "$USERNAME"
+
+# Set root password
+print_color "blue" "Setting root password..."
+echo "root:$PASSWORD" | chroot /mnt chpasswd
+
+# Install desktop environment
+print_color "blue" "Installing $DESKTOP_ENV desktop environment..."
+case $DESKTOP_ENV in
+    "kde-plasma")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y plasma-desktop plasma-nm konsole dolphin
+        ;;
+    "gnome")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y gnome-core gnome-terminal nautilus
+        ;;
+    "xfce")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y xfce4 xfce4-terminal thunar
+        ;;
+    "lxqt")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y lxqt-core pcmanfm-qt
+        ;;
+    "cinnamon")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y cinnamon-desktop-environment
+        ;;
+    "mate")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y mate-desktop-environment
+        ;;
+    "i3")
+        chroot /mnt apt-get update
+        chroot /mnt apt-get install -y i3 i3status dmenu rxvt-unicode
+        ;;
+    "minimal")
+        print_color "yellow" "Minimal installation selected. No desktop environment will be installed."
+        ;;
+esac
+
+# Install display manager
+print_color "blue" "Installing $DISPLAY_MANAGER display manager..."
+case $DISPLAY_MANAGER in
+    "sddm")
+        chroot /mnt apt-get install -y sddm
+        chroot /mnt systemctl enable sddm
+        ;;
+    "gdm")
+        chroot /mnt apt-get install -y gdm3
+        chroot /mnt systemctl enable gdm
+        ;;
+    "lightdm")
+        chroot /mnt apt-get install -y lightdm
+        chroot /mnt systemctl enable lightdm
+        ;;
+    "lxdm")
+        chroot /mnt apt-get install -y lxdm
+        chroot /mnt systemctl enable lxdm
+        ;;
+esac
+
+# Install GRUB bootloader
+print_color "blue" "Installing GRUB bootloader..."
+DISK=$(echo "$TARGET_PARTITION" | sed 's/[0-9]*$//')
+chroot /mnt apt-get install -y grub-pc
+chroot /mnt grub-install "$DISK"
+chroot /mnt update-grub
+
+# Cleanup
+print_color "blue" "Cleaning up..."
+umount /mnt
+
+# Installation complete
+print_color "green" "=================================================="
+print_color "green" "       Chlorine Linux Installation Complete!"
+print_color "green" "=================================================="
+print_color "yellow" "You can now reboot your system and remove the installation media."
+print_color "yellow" "Your system will boot into Chlorine Linux with $DESKTOP_ENV desktop."
+print_color "yellow" "Login with username: $USERNAME and the password you set."
+echo ""
+print_color "cyan" "Thank you for choosing Chlorine Linux!"
+
+exit 0

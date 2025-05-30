@@ -1,0 +1,41 @@
+#!/bin/bash
+set -e
+
+# Install Calamares and its dependencies
+apt-get update
+apt-get install -y calamares calamares-settings-debian
+
+# Create desktop shortcut
+mkdir -p /usr/share/applications
+cat > /usr/share/applications/calamares.desktop << EOL
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Install Chlorine Linux
+GenericName=System Installer
+Comment=Calamares — System Installer for Chlorine Linux
+Exec=sudo calamares
+Icon=calamares
+Terminal=false
+StartupNotify=true
+Categories=System;
+Keywords=installer;calamares;system;
+X-AppStream-Ignore=true
+EOL
+
+# Create desktop shortcut on the desktop
+mkdir -p /etc/skel/Desktop
+cp /usr/share/applications/calamares.desktop /etc/skel/Desktop/
+
+# Make the desktop shortcut executable
+chmod +x /usr/share/applications/calamares.desktop
+chmod +x /etc/skel/Desktop/calamares.desktop
+
+# Create a simple wrapper script to run Calamares with sudo
+cat > /usr/local/bin/run-calamares << EOL
+#!/bin/bash
+sudo calamares
+EOL
+chmod +x /usr/local/bin/run-calamares
+
+echo "Calamares installation completed."

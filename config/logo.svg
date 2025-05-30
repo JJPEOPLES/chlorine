@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 135.46666 135.46667"
+   version="1.1"
+   id="svg5"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs2" />
+  <g
+     id="layer1">
+    <circle
+       style="fill:#2d2d2d;fill-opacity:1;stroke:none;stroke-width:2.64583;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path846"
+       cx="67.73333"
+       cy="67.73333"
+       r="67.73333" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:50.8px;line-height:1.25;font-family:sans-serif;fill:#4dd0e1;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="33.866665"
+       y="86.783333"
+       id="text2246"><tspan
+         id="tspan2244"
+         style="font-size:50.8px;fill:#4dd0e1;fill-opacity:1;stroke-width:0.264583"
+         x="33.866665"
+         y="86.783333">Cl</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:14.1111px;line-height:1.25;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
+       x="40.216667"
+       y="101.6"
+       id="text6598"><tspan
+         id="tspan6596"
+         style="font-size:14.1111px;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+         x="40.216667"
+         y="101.6">CHLORINE</tspan></text>
+  </g>
+</svg>

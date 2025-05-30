@@ -1,5 +1,5 @@
 #!/bin/bash
-# Chlorine Linux Build Script (Fixed version)
+# Chlorine Linux Build Script
 
 set -e
 
@@ -51,7 +51,8 @@ setup_build_environment() {
         --mirror-chroot-security "http://security.debian.org/debian-security/" \
         --debootstrap-options "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg" \
         --binary-filesystem ext4 \
-        --binary-images iso-hybrid
+        --binary-images iso-hybrid \
+        --compression squashfs
     
     # Verify that the configuration was created
     if [ ! -f "config/binary" ]; then
@@ -63,14 +64,10 @@ setup_build_environment() {
     log_info "Adding custom configurations..."
     cp -r "$CONFIG_DIR"/* "$BUILD_DIR"/config/
     
-    # Create squashfs configuration in includes.chroot instead of includes.chroot_after_packages
+    # Create squashfs configuration file
     log_info "Creating squashfs configuration..."
-    
-    # Create includes.chroot directory and etc subdirectory
-    mkdir -p "$BUILD_DIR/config/includes.chroot/etc/"
-    
-    # Create mksquashfs.conf file in includes.chroot/etc
-    cat > "$BUILD_DIR/config/includes.chroot/etc/mksquashfs.conf" << EOL
+    mkdir -p "$BUILD_DIR/config/includes.chroot_after_packages/etc/"
+    cat > "$BUILD_DIR/config/includes.chroot_after_packages/etc/mksquashfs.conf" << EOL
 # Squashfs configuration for Chlorine Linux
 # This file configures mksquashfs to use a 512K block size for better performance
 
@@ -83,8 +80,8 @@ setup_build_environment() {
 # Use all available processors for compression
 -processors 0
 EOL
-
-    # Also create a hook to ensure the configuration is properly set
+    
+    # Create squashfs hook
     mkdir -p "$BUILD_DIR/config/hooks/live/"
     cat > "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot" << EOL
 #!/bin/bash
@@ -95,9 +92,8 @@ set -e
 # Create directory if it doesn't exist
 mkdir -p /etc
 
-# Ensure mksquashfs.conf exists and has correct content
-if [ ! -f /etc/mksquashfs.conf ]; then
-    cat > /etc/mksquashfs.conf << EOLINNER
+# Create mksquashfs.conf with 512K block size
+cat > /etc/mksquashfs.conf << EOLINNER
 # Squashfs configuration for Chlorine Linux
 # This file configures mksquashfs to use a 512K block size for better performance
 
@@ -110,8 +106,8 @@ if [ ! -f /etc/mksquashfs.conf ]; then
 # Use all available processors for compression
 -processors 0
 EOLINNER
-    echo "Created SquashFS configuration with 512K block size for better performance."
-fi
+
+echo "SquashFS configured with 512K block size for better performance."
 EOL
     chmod +x "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot"
     
@@ -183,7 +179,8 @@ main() {
     log_info "Finalizing configuration..."
     lb config \
         --binary-filesystem ext4 \
-        --binary-images iso-hybrid
+        --binary-images iso-hybrid \
+        --compression squashfs
     
     # Build the ISO
     build_iso

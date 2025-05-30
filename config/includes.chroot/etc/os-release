@@ -1,0 +1,8 @@
+PRETTY_NAME="Chlorine Linux"
+NAME="Chlorine Linux"
+VERSION_ID="1.0"
+VERSION="1.0"
+VERSION_CODENAME=chlorine
+ID=chlorine
+ID_LIKE=debian
+IMAGE_ID=live

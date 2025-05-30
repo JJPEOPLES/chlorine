@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# GAPT - GUI wrapper for APT
+# This script launches Synaptic Package Manager when called as "gapt"
+
+# If arguments are provided, pass them to apt
+if [ $# -gt 0 ]; then
+    # Check if the first argument is "gui"
+    if [ "$1" = "gui" ]; then
+        # Launch Synaptic
+        synaptic-pkexec
+    else
+        # Pass arguments to apt
+        apt "$@"
+    fi
+else
+    # No arguments, launch Synaptic
+    synaptic-pkexec
+fi

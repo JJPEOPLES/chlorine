@@ -1,0 +1,77 @@
+#!/bin/bash
+# This script ensures the correct display manager is set based on the desktop environment
+
+# Create a script that will be run during installation to set the correct display manager
+cat > /usr/bin/set-display-manager << "EOL"
+#!/bin/bash
+
+# Get the selected desktop environment from Calamares
+DESKTOP_ENV=$(cat /tmp/desktop_choice 2>/dev/null || echo "kde")
+
+# Set the display manager based on the desktop environment
+case "$DESKTOP_ENV" in
+    kde)
+        echo "Setting SDDM as the default display manager..."
+        echo "/usr/sbin/sddm" > /etc/X11/default-display-manager
+        systemctl disable gdm.service || true
+        systemctl enable sddm.service
+        ;;
+    gnome)
+        echo "Setting GDM3 as the default display manager..."
+        echo "/usr/sbin/gdm3" > /etc/X11/default-display-manager
+        systemctl disable sddm.service || true
+        systemctl enable gdm.service
+        ;;
+    xfce|*)
+        echo "Setting LightDM as the default display manager..."
+        echo "/usr/sbin/lightdm" > /etc/X11/default-display-manager
+        systemctl disable gdm.service || true
+        systemctl disable sddm.service || true
+        systemctl enable lightdm.service
+        ;;
+esac
+
+# Also set the default session
+case "$DESKTOP_ENV" in
+    kde)
+        # Set KDE as default session if available
+        if [ -f /usr/share/xsessions/plasma.desktop ]; then
+            echo "Setting KDE Plasma as the default session..."
+            mkdir -p /var/lib/AccountsService/users/
+            cat > /var/lib/AccountsService/users/\$(logname) << EOFS
+[User]
+XSession=plasma
+EOFS
+        fi
+        ;;
+    gnome)
+        # Set GNOME as default session if available
+        if [ -f /usr/share/xsessions/gnome.desktop ]; then
+            echo "Setting GNOME as the default session..."
+            mkdir -p /var/lib/AccountsService/users/
+            cat > /var/lib/AccountsService/users/\$(logname) << EOFS
+[User]
+XSession=gnome
+EOFS
+        fi
+        ;;
+    xfce|*)
+        # Set XFCE as default session if available
+        if [ -f /usr/share/xsessions/xfce.desktop ]; then
+            echo "Setting XFCE as the default session..."
+            mkdir -p /var/lib/AccountsService/users/
+            cat > /var/lib/AccountsService/users/\$(logname) << EOFS
+[User]
+XSession=xfce
+EOFS
+        fi
+        ;;
+esac
+
+echo "Display manager and default session configured successfully."
+EOL
+
+# Make the script executable
+chmod +x /usr/bin/set-display-manager
+
+echo "Display manager configuration script created successfully."

@@ -1,0 +1,36 @@
+.TH GAPT 1 "May 2024" "Chlorine Linux" "User Commands"
+.SH NAME
+gapt \- GUI frontend for APT package management
+.SH SYNOPSIS
+.B gapt
+[\fIoptions\fR]
+.SH DESCRIPTION
+.B gapt
+is a graphical user interface for the APT package management system. It provides a user-friendly way to install, remove, and upgrade software packages on Chlorine Linux.
+.PP
+When run without arguments, gapt launches the Synaptic Package Manager. When run with arguments, it passes them to the apt command.
+.SH OPTIONS
+.TP
+.B gui
+Launch the graphical interface (Synaptic Package Manager)
+.TP
+Any other options are passed directly to the apt command.
+.SH EXAMPLES
+.TP
+.B gapt
+Launch Synaptic Package Manager
+.TP
+.B gapt gui
+Launch Synaptic Package Manager
+.TP
+.B gapt install firefox
+Install Firefox using apt
+.TP
+.B gapt update
+Update package lists using apt
+.SH SEE ALSO
+.BR apt (8),
+.BR synaptic (8),
+.BR apt-get (8)
+.SH AUTHOR
+Chlorine Linux Team

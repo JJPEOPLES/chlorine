@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+apt-get update
+apt-get install -y linux-image-amd64 linux-headers-amd64 firmware-linux firmware-linux-nonfree
+update-initramfs -u -k all

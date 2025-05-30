@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+# Enable dbus service to start automatically
+systemctl enable dbus.service
+
+# Create a script to start dbus on boot in the live environment
+cat > /etc/profile.d/start-dbus.sh << EOL
+#!/bin/bash
+# Start dbus if it's not already running
+if ! systemctl is-active dbus.service > /dev/null; then
+    sudo systemctl start dbus.service
+fi
+EOL
+
+# Make the script executable
+chmod +x /etc/profile.d/start-dbus.sh
