@@ -38,9 +38,13 @@ cleanup_directories() {
             mkdir -p "$ROOT_DIR/config/includes.chroot"
         fi
         
-        # Move files from includes.chroot_after_packages to includes.chroot
+        # Move files from includes.chroot_after_packages to includes.chroot if any exist
         log_info "Moving files from includes.chroot_after_packages to includes.chroot..."
-        cp -r "$ROOT_DIR/config/includes.chroot_after_packages/"* "$ROOT_DIR/config/includes.chroot/"
+        if [ "$(ls -A "$ROOT_DIR/config/includes.chroot_after_packages/" 2>/dev/null)" ]; then
+            cp -r "$ROOT_DIR/config/includes.chroot_after_packages/"* "$ROOT_DIR/config/includes.chroot/"
+        else
+            log_info "No files found in includes.chroot_after_packages directory."
+        fi
         
         # Remove includes.chroot_after_packages
         log_info "Removing original includes.chroot_after_packages directory..."
