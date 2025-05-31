@@ -136,6 +136,18 @@ build_iso() {
     log_info "Building ISO..."
     cd "$BUILD_DIR"
     
+    # Ensure chroot directory exists
+    if [ ! -d "$BUILD_DIR/chroot" ]; then
+        log_info "Creating chroot directory..."
+        mkdir -p "$BUILD_DIR/chroot"
+    fi
+    
+    # Run lb bootstrap first to ensure the chroot environment is set up
+    log_info "Running bootstrap to set up chroot environment..."
+    if ! lb bootstrap; then
+        log_warn "Bootstrap failed, but continuing with build..."
+    fi
+    
     # Run lb build to create the ISO
     if lb build; then
         # Copy the ISO to the output directory

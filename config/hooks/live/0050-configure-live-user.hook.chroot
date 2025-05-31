@@ -1,0 +1,58 @@
+#!/bin/bash
+# Configure the live user account with username 'live' and password 'live'
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo -e "${GREEN}[INFO]${NC} Setting up live user account..."
+
+# Create the live user if it doesn't exist
+if ! id live &>/dev/null; then
+    adduser --gecos "Chlorine Live User" --disabled-password --shell /bin/bash live
+    # Set the password to 'live'
+    echo "live:live" | chpasswd
+    
+    # Add the user to necessary groups
+    usermod -aG sudo,audio,video,cdrom,plugdev,netdev,bluetooth live
+    
+    # Create home directory if it doesn't exist
+    mkdir -p /home/live
+    chown -R live:live /home/live
+fi
+
+# Configure autologin for the live user in display manager
+# For SDDM (KDE)
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/autologin.conf << EOFINNER
+[Autologin]
+User=live
+Session=plasma
+Relogin=false
+EOFINNER
+
+# For GDM (GNOME)
+cat > /etc/gdm3/custom.conf << EOFINNER
+[daemon]
+AutomaticLoginEnable=true
+AutomaticLogin=live
+EOFINNER
+
+# For LightDM (XFCE and others)
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/12-autologin.conf << EOFINNER
+[Seat:*]
+autologin-user=live
+autologin-user-timeout=0
+EOFINNER
+
+# Configure sudo without password for the live user
+echo "live ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/live
+chmod 440 /etc/sudoers.d/live
+
+echo -e "${GREEN}[INFO]${NC} Live user account setup complete."
+
+# Always exit with success
+exit 0

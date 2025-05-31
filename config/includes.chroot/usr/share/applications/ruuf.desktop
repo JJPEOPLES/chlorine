@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Ruuf
+GenericName=USB ISO Flasher
+Comment=Flash ISO images to USB drives (Rufus for Linux)
+Exec=pkexec /usr/local/bin/ruuf
+Icon=drive-removable-media
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=usb;flash;iso;rufus;
+StartupNotify=true

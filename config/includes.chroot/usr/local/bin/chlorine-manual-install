@@ -132,6 +132,14 @@ fi
 # Start installation
 print_color "green" "Starting installation..."
 
+# Check if /dev is mounted in the host system
+if ! mount | grep -q "on /dev type"; then
+    print_color "red" "Error: /dev is not mounted in the host system."
+    print_color "yellow" "Attempting to mount /dev..."
+    mount -t devtmpfs devtmpfs /dev || { print_color "red" "Failed to mount /dev. Cannot continue."; exit 1; }
+    print_color "green" "/dev mounted successfully."
+fi
+
 # Format the partition
 print_color "blue" "Formatting $TARGET_PARTITION as $FILESYSTEM..."
 case $FILESYSTEM in
@@ -171,6 +179,14 @@ fi
 # Create necessary directories
 print_color "blue" "Creating necessary directories..."
 mkdir -p /mnt/{proc,sys,dev,run,media,tmp}
+
+# Mount virtual filesystems
+print_color "blue" "Mounting virtual filesystems for chroot..."
+mount --bind /dev /mnt/dev || { print_color "red" "Failed to mount /dev. Exiting."; umount /mnt; exit 1; }
+mount --bind /dev/pts /mnt/dev/pts || { print_color "red" "Failed to mount /dev/pts. Exiting."; umount /mnt/dev; umount /mnt; exit 1; }
+mount -t proc proc /mnt/proc || { print_color "red" "Failed to mount /proc. Exiting."; umount /mnt/dev/pts; umount /mnt/dev; umount /mnt; exit 1; }
+mount -t sysfs sys /mnt/sys || { print_color "red" "Failed to mount /sys. Exiting."; umount /mnt/proc; umount /mnt/dev/pts; umount /mnt/dev; umount /mnt; exit 1; }
+mount -t tmpfs tmpfs /mnt/run || { print_color "red" "Failed to mount /run. Exiting."; umount /mnt/sys; umount /mnt/proc; umount /mnt/dev/pts; umount /mnt/dev; umount /mnt; exit 1; }
 
 # Create fstab
 print_color "blue" "Creating fstab..."
@@ -258,6 +274,11 @@ chroot /mnt update-grub
 
 # Cleanup
 print_color "blue" "Cleaning up..."
+umount /mnt/dev/pts
+umount /mnt/dev
+umount /mnt/proc
+umount /mnt/sys
+umount /mnt/run
 umount /mnt
 
 # Installation complete

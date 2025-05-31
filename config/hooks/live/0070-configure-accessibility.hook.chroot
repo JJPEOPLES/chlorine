@@ -1,0 +1,96 @@
+#!/bin/bash
+# Configure accessibility features for Chlorine Linux
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo -e "${GREEN}[INFO]${NC} Setting up accessibility features..."
+
+# Enable accessibility services by default
+mkdir -p /etc/xdg/autostart
+
+# Enable screen reader service
+cat > /etc/xdg/autostart/orca-autostart.desktop << EOFINNER
+[Desktop Entry]
+Type=Application
+Name=Orca Screen Reader
+Comment=Start Orca screen reader automatically
+Exec=orca
+OnlyShowIn=GNOME;MATE;XFCE;KDE;
+AutostartCondition=GSettings org.gnome.desktop.a11y.applications screen-reader-enabled
+X-GNOME-AutoRestart=true
+NoDisplay=true
+X-Ubuntu-Gettext-Domain=orca
+EOFINNER
+
+# Enable high contrast theme detection
+cat > /etc/xdg/autostart/high-contrast-detect.desktop << EOFINNER
+[Desktop Entry]
+Type=Application
+Name=High Contrast Theme Detection
+Comment=Detect if high contrast is needed
+Exec=sh -c 'if [ "$ACCESSIBILITY_ENABLED" = "1" ] && [ "$HIGH_CONTRAST_ENABLED" = "1" ]; then gsettings set org.gnome.desktop.interface gtk-theme HighContrast; fi'
+OnlyShowIn=GNOME;MATE;XFCE;KDE;
+NoDisplay=true
+EOFINNER
+
+# Create a script to enable accessibility features based on kernel parameters
+cat > /usr/local/bin/enable-accessibility << EOFINNER
+#!/bin/bash
+
+# Check kernel parameters for accessibility options
+if grep -q "accessibility=on" /proc/cmdline; then
+    export ACCESSIBILITY_ENABLED=1
+    
+    # High contrast
+    if grep -q "highcontrast=on" /proc/cmdline; then
+        export HIGH_CONTRAST_ENABLED=1
+        if command -v gsettings >/dev/null; then
+            gsettings set org.gnome.desktop.interface gtk-theme HighContrast
+        fi
+    fi
+    
+    # Screen reader
+    if grep -q "screenreader=on" /proc/cmdline; then
+        export SCREEN_READER_ENABLED=1
+        if command -v gsettings >/dev/null; then
+            gsettings set org.gnome.desktop.a11y.applications screen-reader-enabled true
+            # Start Orca
+            if command -v orca >/dev/null; then
+                orca &
+            fi
+        fi
+    fi
+    
+    # Keyboard accessibility
+    if grep -q "keyboard=on" /proc/cmdline; then
+        export KEYBOARD_ACCESSIBILITY_ENABLED=1
+        if command -v gsettings >/dev/null; then
+            gsettings set org.gnome.desktop.a11y.keyboard enable true
+            gsettings set org.gnome.desktop.a11y.keyboard stickykeys-enable true
+            gsettings set org.gnome.desktop.a11y.keyboard slowkeys-enable true
+        fi
+    fi
+fi
+EOFINNER
+
+chmod +x /usr/local/bin/enable-accessibility
+
+# Add the script to user session startup
+cat > /etc/xdg/autostart/chlorine-accessibility.desktop << EOFINNER
+[Desktop Entry]
+Type=Application
+Name=Chlorine Accessibility
+Comment=Enable accessibility features based on boot parameters
+Exec=/usr/local/bin/enable-accessibility
+OnlyShowIn=GNOME;MATE;XFCE;KDE;
+NoDisplay=true
+EOFINNER
+
+echo -e "${GREEN}[INFO]${NC} Accessibility setup complete."
+
+# Always exit with success
+exit 0

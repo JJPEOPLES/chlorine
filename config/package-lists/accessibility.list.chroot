@@ -1,0 +1,8 @@
+# Accessibility packages for Chlorine Linux
+orca
+brltty
+at-spi2-core
+speech-dispatcher
+espeak-ng
+liblouis-data
+gnome-accessibility-themes

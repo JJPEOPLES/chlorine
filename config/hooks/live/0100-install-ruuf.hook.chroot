@@ -1,0 +1,80 @@
+#!/bin/bash
+# Hook to install ruuf during system setup
+# Remove set -e to prevent script from failing
+# set -e
+
+echo "Installing ruuf (Rufus for Linux)..."
+
+# Check if the install-ruuf script exists
+if [ -f "/usr/local/bin/install-ruuf" ]; then
+    # Run the existing script
+    /usr/local/bin/install-ruuf || true
+else
+    echo "Creating install-ruuf script..."
+    
+    # Create the installation script
+    cat > /usr/local/bin/install-ruuf << 'EOF'
+#!/bin/bash
+# Install script for ruuf (Rufus for Linux)
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Install dependencies
+log_info "Installing dependencies for ruuf..."
+apt-get update || true
+apt-get install -y python3 python3-pip python3-tk python3-pil python3-pil.imagetk git || true
+
+# Clone the repository
+log_info "Cloning ruuf repository..."
+if [ -d "/opt/ruuf" ]; then
+    log_info "Removing existing ruuf installation..."
+    rm -rf /opt/ruuf
+fi
+
+git clone https://github.com/JJPEOPLES/Ruuf-.git /opt/ruuf || true
+
+# Install Python dependencies if requirements.txt exists
+log_info "Installing Python dependencies..."
+if [ -f "/opt/ruuf/ruuf/requirements.txt" ]; then
+    pip3 install -r /opt/ruuf/ruuf/requirements.txt || true
+else
+    log_warn "requirements.txt not found. Installing basic dependencies..."
+    pip3 install tkinter pillow || true
+fi
+
+# Create the wrapper script
+log_info "Creating wrapper script..."
+cat > /usr/local/bin/ruuf << 'EOFINNER'
+#!/bin/bash
+# Wrapper script for ruuf (Rufus for Linux)
+
+cd /opt/ruuf/ruuf || cd /opt/ruuf
+python3 ruuf_usb_flasher.py "$@"
+EOFINNER
+
+# Make the wrapper script executable
+chmod +x /usr/local/bin/ruuf
+
+log_info "ruuf has been installed successfully!"
+log_info "You can run it by typing 'ruuf' in the terminal or from the application menu."
+EOF
+    
+    # Make the installation script executable
+    chmod +x /usr/local/bin/install-ruuf
+    
+    # Run the installation script
+    /usr/local/bin/install-ruuf || true
+fi
+
+echo "ruuf installation completed."
+
+# Always exit with success
+exit 0

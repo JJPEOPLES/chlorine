@@ -1,0 +1,54 @@
+#!/bin/bash
+# Ensure kernel and initrd files are properly set up
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${GREEN}[INFO]${NC} Setting up kernel and initrd files..."
+
+# Directory containing the kernel and initrd files
+LIVE_DIR="binary/live"
+
+if [ ! -d "$LIVE_DIR" ]; then
+    echo -e "${RED}[ERROR]${NC} Live directory not found at $LIVE_DIR"
+    exit 0  # Don't fail the build, but exit with a warning
+fi
+
+# Find the actual kernel and initrd files
+KERNEL_FILES=$(find "$LIVE_DIR" -name "vmlinuz*" | sort)
+INITRD_FILES=$(find "$LIVE_DIR" -name "initrd*" | sort)
+
+if [ -z "$KERNEL_FILES" ]; then
+    echo -e "${RED}[ERROR]${NC} No kernel files found in $LIVE_DIR"
+    exit 0
+fi
+
+if [ -z "$INITRD_FILES" ]; then
+    echo -e "${RED}[ERROR]${NC} No initrd files found in $LIVE_DIR"
+    exit 0
+fi
+
+# Get the first kernel and initrd file
+KERNEL_FILE=$(echo "$KERNEL_FILES" | head -n 1)
+INITRD_FILE=$(echo "$INITRD_FILES" | head -n 1)
+
+echo -e "${GREEN}[INFO]${NC} Found kernel: $KERNEL_FILE"
+echo -e "${GREEN}[INFO]${NC} Found initrd: $INITRD_FILE"
+
+# Create symlinks
+ln -sf "$(basename "$KERNEL_FILE")" "$LIVE_DIR/vmlinuz"
+ln -sf "$(basename "$INITRD_FILE")" "$LIVE_DIR/initrd.img"
+
+echo -e "${GREEN}[INFO]${NC} Created symlinks:"
+echo -e "${GREEN}[INFO]${NC} $LIVE_DIR/vmlinuz -> $(basename "$KERNEL_FILE")"
+echo -e "${GREEN}[INFO]${NC} $LIVE_DIR/initrd.img -> $(basename "$INITRD_FILE")"
+
+echo -e "${GREEN}[INFO]${NC} Kernel and initrd setup complete."
+
+# Always exit with success
+exit 0

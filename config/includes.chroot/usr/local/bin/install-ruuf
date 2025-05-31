@@ -1,0 +1,48 @@
+#!/bin/bash
+# Install script for ruuf (Rufus for Linux)
+
+set -e
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# Install dependencies
+log_info "Installing dependencies for ruuf..."
+apt-get update
+apt-get install -y python3 python3-pip python3-tk python3-pil python3-pil.imagetk
+
+# Clone the repository
+log_info "Cloning ruuf repository..."
+if [ -d "/opt/ruuf" ]; then
+    log_info "Removing existing ruuf installation..."
+    rm -rf /opt/ruuf
+fi
+
+git clone https://github.com/JJPEOPLES/Ruuf-.git /opt/ruuf
+
+# Install Python dependencies
+log_info "Installing Python dependencies..."
+pip3 install -r /opt/ruuf/ruuf/requirements.txt
+
+# Create the wrapper script
+log_info "Creating wrapper script..."
+cat > /usr/local/bin/ruuf << 'EOFINNER'
+#!/bin/bash
+# Wrapper script for ruuf (Rufus for Linux)
+
+cd /opt/ruuf/ruuf
+python3 ruuf_usb_flasher.py "$@"
+EOFINNER
+
+# Make the wrapper script executable
+chmod +x /usr/local/bin/ruuf
+
+log_info "ruuf has been installed successfully!"
+log_info "You can run it by typing 'ruuf' in the terminal or from the application menu."

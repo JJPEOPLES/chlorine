@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+# Update the man database to include our custom man pages
+mandb
+
+# Make sure the gapt script is executable
+chmod +x /usr/local/bin/gapt

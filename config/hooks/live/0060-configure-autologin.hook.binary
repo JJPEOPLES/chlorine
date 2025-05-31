@@ -1,0 +1,24 @@
+#!/bin/bash
+# Configure autologin for the live environment
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo -e "${GREEN}[INFO]${NC} Setting up autologin for live environment..."
+
+# Create the live user configuration in the binary stage
+LIVE_BOOT_CONF="binary/boot/grub/grub.cfg"
+
+if [ -f "$LIVE_BOOT_CONF" ]; then
+    # Add live user parameters to the boot options
+    sed -i 's/boot=live/boot=live username=live user-fullname=live hostname=chlorine-live/g' "$LIVE_BOOT_CONF"
+    echo -e "${GREEN}[INFO]${NC} Updated boot parameters in $LIVE_BOOT_CONF"
+fi
+
+echo -e "${GREEN}[INFO]${NC} Autologin configuration complete."
+
+# Always exit with success
+exit 0
