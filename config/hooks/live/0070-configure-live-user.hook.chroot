@@ -1,0 +1,58 @@
+#!/bin/bash
+# Configure live user settings
+
+set -e
+
+echo "Configuring live user settings..."
+
+# Create a minimal desktop environment for the live user
+if id "live" &>/dev/null; then
+    # Create minimal desktop directory structure
+    mkdir -p /home/live/.config
+    mkdir -p /home/live/.local/share
+    
+    # Set KDE as default session for live user
+    mkdir -p /home/live/.config/sddm
+    cat > /home/live/.config/sddm/sddm.conf << SDDM
+[Autologin]
+User=live
+Session=plasma
+SDDM
+
+    # Set ownership
+    chown -R live:live /home/live
+fi
+
+# Create a script to clean up the live user on first boot after installation
+mkdir -p /usr/local/sbin
+cat > /usr/local/sbin/cleanup-live-user << 'CLEANUP'
+#!/bin/bash
+
+# This script will run on first boot after installation to clean up the live user
+if [ -f /etc/calamares/installed ]; then
+    if id "live" &>/dev/null; then
+        echo "Removing live user..."
+        pkill -u live || true
+        deluser --remove-home live || true
+        # Remove this script from running again
+        rm -f /usr/local/sbin/cleanup-live-user
+    fi
+fi
+CLEANUP
+
+chmod +x /usr/local/sbin/cleanup-live-user
+
+# Add the cleanup script to rc.local to run on first boot
+if [ ! -f /etc/rc.local ]; then
+    cat > /etc/rc.local << 'RCLOCAL'
+#!/bin/bash
+/usr/local/sbin/cleanup-live-user
+exit 0
+RCLOCAL
+    chmod +x /etc/rc.local
+else
+    # Add the cleanup script to existing rc.local
+    sed -i '/^exit 0/i /usr/local/sbin/cleanup-live-user' /etc/rc.local
+fi
+
+echo "Live user configuration completed."

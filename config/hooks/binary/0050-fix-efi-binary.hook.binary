@@ -1,0 +1,38 @@
+#!/bin/bash
+# Fix EFI boot issues in the binary stage
+
+set -e
+
+echo "Setting up EFI boot in binary stage..."
+
+# Create EFI directories if they don't exist
+mkdir -p binary/boot/efi
+mkdir -p binary/boot/grub/x86_64-efi
+mkdir -p binary/EFI/BOOT
+
+# Copy EFI bootloader if it exists
+if [ -f binary/boot/grub/x86_64-efi/grub.efi ]; then
+  cp binary/boot/grub/x86_64-efi/grub.efi binary/EFI/BOOT/BOOTX64.EFI
+elif [ -f binary/usr/lib/grub/x86_64-efi/grub.efi ]; then
+  cp binary/usr/lib/grub/x86_64-efi/grub.efi binary/EFI/BOOT/BOOTX64.EFI
+fi
+
+# Create a minimal grub.cfg in the EFI directory
+mkdir -p binary/EFI/BOOT
+cat > binary/EFI/BOOT/grub.cfg << GRUBCFG
+# Minimal GRUB configuration for EFI boot
+insmod all_video
+insmod gfxterm
+set gfxmode=auto
+terminal_output gfxterm
+
+set timeout=5
+set default=0
+
+menuentry "Chlorine Linux (Live)" {
+  linux /live/vmlinuz boot=live quiet splash
+  initrd /live/initrd.img
+}
+GRUBCFG
+
+echo "EFI binary boot setup completed."

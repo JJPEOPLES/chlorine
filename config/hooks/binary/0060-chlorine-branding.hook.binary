@@ -1,0 +1,23 @@
+#!/bin/bash
+# Set Chlorine branding in binary stage
+
+set -e
+
+echo "Setting Chlorine branding in binary stage..."
+
+# Update issue files in the binary image
+if [ -f binary/etc/issue ]; then
+    sed -i 's/Debian GNU\/Linux/Chlorine GNU\/Linux/g' binary/etc/issue
+fi
+
+if [ -f binary/etc/issue.net ]; then
+    sed -i 's/Debian GNU\/Linux/Chlorine GNU\/Linux/g' binary/etc/issue.net
+fi
+
+# Update os-release file in the binary image
+if [ -f binary/etc/os-release ]; then
+    sed -i 's/PRETTY_NAME="Debian GNU\/Linux/PRETTY_NAME="Chlorine GNU\/Linux/g' binary/etc/os-release
+    sed -i 's/NAME="Debian GNU\/Linux"/NAME="Chlorine GNU\/Linux"/g' binary/etc/os-release
+fi
+
+echo "Chlorine branding completed."

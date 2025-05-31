@@ -1,0 +1,43 @@
+#!/bin/bash
+# Fix EFI boot issues
+
+set -e
+
+echo "Ensuring EFI directories are properly set up..."
+
+# Create EFI directories if they don't exist
+mkdir -p /boot/efi
+mkdir -p /boot/grub/x86_64-efi
+
+# Make sure grub packages are installed
+apt-get update
+apt-get install -y --no-install-recommends grub-efi-amd64 grub-efi-amd64-bin efibootmgr
+
+# Ensure grub modules are available
+if [ ! -d /usr/lib/grub/x86_64-efi ]; then
+  echo "GRUB EFI modules directory missing, creating..."
+  mkdir -p /usr/lib/grub/x86_64-efi
+fi
+
+# Create a dummy grub.cfg to ensure the directory exists
+mkdir -p /boot/grub
+if [ ! -f /boot/grub/grub.cfg ]; then
+  echo "Creating minimal grub.cfg..."
+  cat > /boot/grub/grub.cfg << GRUBCFG
+# Minimal GRUB configuration
+insmod all_video
+insmod gfxterm
+set gfxmode=auto
+terminal_output gfxterm
+
+set timeout=5
+set default=0
+
+menuentry "Chlorine Linux (Live)" {
+  linux /live/vmlinuz boot=live quiet splash
+  initrd /live/initrd.img
+}
+GRUBCFG
+fi
+
+echo "EFI boot setup completed."

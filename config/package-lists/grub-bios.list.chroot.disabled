@@ -1,0 +1,5 @@
+# BIOS boot packages (disabled by default)
+grub2-common
+grub-pc
+grub-pc-bin
+os-prober

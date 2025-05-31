@@ -1,12 +1,12 @@
 # Chlorine Linux ISO Files
 
-Last updated: Fri May 30 06:06:09 PM EDT 2025
+Last updated: Sat May 31 03:39:49 PM EDT 2025
 
 ## Available ISO Files
 
 ### chlorine-linux.iso
 
-- Size: 2.5G
-- Date: 2025-05-30 13:13:10
-- SHA256: 273dc64b06a73f75fd9f4904147c259371c57fe256a8c71fc572ca6b3476acff
+- Size: 1.4G
+- Date: 2025-05-31 15:32:52
+- SHA256: 3898196aeeb600e1582a90a4954cf6c5772ffd47f57888644842086c64d3c536
 

@@ -1,0 +1,56 @@
+# Chlorine Linux - Initramfs Rescue Guide
+
+If you boot into an initramfs prompt, try these commands to diagnose and potentially fix the issue:
+
+## 1. Check available devices
+```
+ls /dev/sd*
+```
+
+## 2. Check if the USB is detected properly
+```
+blkid
+```
+
+## 3. Try to manually mount the filesystem
+```
+mkdir -p /mnt
+mount /dev/sdb1 /mnt
+ls /mnt
+```
+(Replace sdb1 with your actual USB partition)
+
+## 4. Try to boot manually
+```
+# Find the kernel and initrd
+ls /mnt/live/
+
+# Boot manually
+linux /mnt/live/vmlinuz boot=live
+initrd /mnt/live/initrd.img
+boot
+```
+
+## 5. If you see "boot:" prompt instead of initramfs
+Try typing these boot parameters:
+```
+live-media=/dev/sdb1 live-media-path=/live
+```
+(Replace sdb1 with your actual USB partition)
+
+## 6. Alternative boot parameters to try
+```
+boot=live live-media-path=/live live-media=/dev/sdb1 nomodeset
+```
+
+## 7. If you have graphics issues, try adding these parameters
+```
+nomodeset xforcevesa
+```
+
+## 8. If you suspect RAM issues, try
+```
+memtest
+```
+
+Remember to replace "sdb1" with your actual USB device partition.

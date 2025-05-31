@@ -132,6 +132,44 @@ fi
 # Start installation
 print_color "green" "Starting installation..."
 
+# Clear partition table and create a new one
+print_color "blue" "Clearing partition table on $DISK..."
+DISK=$(echo "$TARGET_PARTITION" | sed 's/[0-9]*$//')
+PART_NUM=$(echo "$TARGET_PARTITION" | grep -o '[0-9]*$')
+
+# Unmount the partition if it's mounted
+if mount | grep -q "$TARGET_PARTITION"; then
+    print_color "yellow" "Unmounting $TARGET_PARTITION..."
+    umount "$TARGET_PARTITION"
+fi
+
+# Clear the partition table (this will erase ALL data on the disk)
+print_color "red" "WARNING: About to clear ALL partitions on $DISK!"
+print_color "red" "This will ERASE ALL DATA on the entire disk!"
+read -p "Type 'ERASE ALL' to confirm and continue: " ERASE_CONFIRM
+
+if [ "$ERASE_CONFIRM" != "ERASE ALL" ]; then
+    print_color "red" "Disk erase cancelled. Exiting."
+    exit 1
+fi
+
+# Clear the partition table
+dd if=/dev/zero of="$DISK" bs=512 count=1 conv=notrunc
+sync
+
+# Create a new partition table
+print_color "blue" "Creating new partition table on $DISK..."
+parted -s "$DISK" mklabel gpt
+
+# Create a new partition
+print_color "blue" "Creating new partition on $DISK..."
+parted -s "$DISK" mkpart primary 1MiB 100%
+parted -s "$DISK" set 1 boot on
+
+# Wait for the system to recognize the new partition
+sleep 2
+sync
+
 # Format the partition
 print_color "blue" "Formatting $TARGET_PARTITION as $FILESYSTEM..."
 case $FILESYSTEM in
@@ -252,12 +290,43 @@ esac
 # Install GRUB bootloader
 print_color "blue" "Installing GRUB bootloader..."
 DISK=$(echo "$TARGET_PARTITION" | sed 's/[0-9]*$//')
-chroot /mnt apt-get install -y grub-pc
-chroot /mnt grub-install "$DISK"
+
+# Mount necessary filesystems for chroot
+print_color "blue" "Mounting virtual filesystems for chroot..."
+mount --bind /dev /mnt/dev
+mount --bind /dev/pts /mnt/dev/pts
+mount --bind /proc /mnt/proc
+mount --bind /sys /mnt/sys
+
+# Install GRUB
+print_color "blue" "Installing GRUB packages..."
+chroot /mnt apt-get update
+chroot /mnt apt-get install -y grub-pc grub-efi-amd64 efibootmgr os-prober
+
+# Create EFI directory if it doesn't exist
+chroot /mnt mkdir -p /boot/efi
+
+# Install GRUB for both BIOS and UEFI
+print_color "blue" "Installing GRUB to $DISK..."
+chroot /mnt grub-install --target=i386-pc "$DISK" --recheck
+print_color "blue" "Updating GRUB configuration..."
 chroot /mnt update-grub
+
+# Unmount virtual filesystems
+print_color "blue" "Unmounting virtual filesystems..."
+umount /mnt/dev/pts
+umount /mnt/dev
+umount /mnt/proc
+umount /mnt/sys
 
 # Cleanup
 print_color "blue" "Cleaning up..."
+# Make sure all virtual filesystems are unmounted (in case previous unmounts failed)
+umount /mnt/dev/pts 2>/dev/null || true
+umount /mnt/dev 2>/dev/null || true
+umount /mnt/proc 2>/dev/null || true
+umount /mnt/sys 2>/dev/null || true
+umount /mnt/boot/efi 2>/dev/null || true
 umount /mnt
 
 # Installation complete

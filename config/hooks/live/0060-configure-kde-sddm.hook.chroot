@@ -1,0 +1,45 @@
+#!/bin/bash
+# Configure KDE and SDDM as default
+
+set -e
+
+echo "Configuring KDE and SDDM as default..."
+
+# Set SDDM as the default display manager
+echo "/usr/bin/sddm" > /etc/X11/default-display-manager
+
+# Make sure SDDM is enabled and GDM3 is disabled
+if [ -f /usr/bin/deb-systemd-helper ]; then
+    deb-systemd-helper disable gdm3.service || true
+    deb-systemd-helper unmask sddm.service || true
+    deb-systemd-helper enable sddm.service || true
+fi
+
+# Remove GDM3 if installed
+apt-get remove --purge -y gdm3 || true
+
+# Change TTY prompt from Debian to Chlorine
+if [ -f /etc/issue ]; then
+    sed -i 's/Debian GNU\/Linux/Chlorine GNU\/Linux/g' /etc/issue
+fi
+
+if [ -f /etc/issue.net ]; then
+    sed -i 's/Debian GNU\/Linux/Chlorine GNU\/Linux/g' /etc/issue.net
+fi
+
+# Update os-release file
+if [ -f /etc/os-release ]; then
+    sed -i 's/PRETTY_NAME="Debian GNU\/Linux/PRETTY_NAME="Chlorine GNU\/Linux/g' /etc/os-release
+    sed -i 's/NAME="Debian GNU\/Linux"/NAME="Chlorine GNU\/Linux"/g' /etc/os-release
+fi
+
+# Update GRUB configuration
+if [ -f /etc/default/grub ]; then
+    sed -i 's/GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="Chlorine"/g' /etc/default/grub
+    update-grub || true
+fi
+
+# Clean up unnecessary desktop files
+find /usr/share/applications -name "*gnome*" -delete || true
+
+echo "KDE and SDDM configuration completed."
