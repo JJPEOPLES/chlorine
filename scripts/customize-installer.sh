@@ -19,17 +19,9 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 prompt_desktop_choice() {
-    echo -e "\nChoose your desktop environment:"
-    echo "  1) KDE Plasma"
-    echo "  2) GNOME"
-    echo "  3) XFCE"
-    read -rp "Enter choice [1-3]: " choice
-    case $choice in
-        1) DESKTOP="kde";;
-        2) DESKTOP="gnome";;
-        3) DESKTOP="xfce";;
-        *) echo "Invalid option, defaulting to KDE."; DESKTOP="kde";;
-    esac
+    # Always use KDE as the default desktop
+    DESKTOP="kde"
+    echo -e "\nUsing KDE Plasma as the default desktop environment."
 }
 
 setup_calamares() {
@@ -103,7 +95,7 @@ type: "contextualprocess"
 pretty_name: "Installing desktop environment..."
 contextualprocess:
   kde:
-    - command: "apt-get update && apt-get install -y plasma-desktop sddm konsole dolphin kate kwrite ark gwenview okular"
+    - command: "apt-get update && apt-get install -y kde-standard kde-plasma-desktop plasma-desktop plasma-nm plasma-pa plasma-widgets-addons plasma-workspace sddm konsole dolphin kate kwrite ark gwenview okular kdeconnect kscreen ksysguard kwalletmanager partitionmanager spectacle systemsettings"
   gnome:
     - command: "apt-get update && apt-get install -y gnome-shell gdm3 gnome-terminal nautilus gedit eog evince"
   xfce:
