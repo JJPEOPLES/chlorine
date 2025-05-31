@@ -20,3 +20,6 @@ See the `docs/` directory for build instructions.
 ## Installation
 
 The distribution can be installed using the GUI installer included on the live ISO.
+u can also install this via manual install (chlorine-manual-install)
+if u encounter issues such as slow boot  make a complaint
+it can be installed  at [Download Chlorine Linux](https://chlorine.k2lang.org/downloads/)
