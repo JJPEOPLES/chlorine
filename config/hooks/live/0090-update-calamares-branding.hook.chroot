@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+echo "Setting up Calamares branding for Chlorine..."
+
+# Create branding directory if it doesn't exist
+mkdir -p /etc/calamares/branding/chlorine
+
+# Copy logo for branding
+cp /usr/share/icons/hicolor/scalable/apps/chlorine-logo.svg /etc/calamares/branding/chlorine/logo.png
+
+# Create placeholder slide images if they don't exist
+for i in {1..4}; do
+  if [ ! -f /etc/calamares/branding/chlorine/slide$i.png ]; then
+    # Create a simple colored rectangle as placeholder
+    convert -size 800x450 xc:#00bcd4 -gravity center -pointsize 40 -fill white \
+      -annotate 0 "Chlorine Linux Slide $i" /etc/calamares/branding/chlorine/slide$i.png || true
+  fi
+done
+
+# Create welcome image
+if [ ! -f /etc/calamares/branding/chlorine/welcome.png ]; then
+  cp /etc/calamares/branding/chlorine/slide1.png /etc/calamares/branding/chlorine/welcome.png || true
+fi
+
+# Update Calamares settings to use our branding
+if [ -f /etc/calamares/settings.conf ]; then
+  sed -i 's/branding: debian/branding: chlorine/' /etc/calamares/settings.conf
+fi
+
+echo "Calamares branding setup completed."

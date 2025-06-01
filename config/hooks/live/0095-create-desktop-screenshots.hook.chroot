@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+echo "Creating desktop environment screenshots for Calamares..."
+
+# Create directory for screenshots
+mkdir -p /etc/calamares/images
+
+# Create placeholder screenshots for desktop environments
+for de in xfce kde gnome lxde lxqt mate cinnamon budgie; do
+  if [ ! -f /etc/calamares/images/$de.png ]; then
+    # Create a simple colored rectangle as placeholder with the DE name
+    convert -size 400x300 xc:#00bcd4 -gravity center -pointsize 30 -fill white \
+      -annotate 0 "$de Desktop" /etc/calamares/images/$de.png || true
+  fi
+done
+
+echo "Desktop environment screenshots created."

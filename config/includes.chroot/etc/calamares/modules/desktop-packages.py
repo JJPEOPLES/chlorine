@@ -1,33 +1,77 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-import os
+# Calamares module for handling desktop environment packages
+# This script ensures that the selected desktop environment packages are installed
+
 import libcalamares
+import os
+import subprocess
+from libcalamares.utils import debug, warning
 
 def run():
     """
-    Set up the desktop packages for installation
+    Install the selected desktop environment packages
+    :return:
     """
-    # Run the setup script again to make sure
-    os.system("/usr/bin/setup-desktop-packages")
+    # Get the selected desktop environment from packagechooser
+    desktop_environment = libcalamares.globalstorage.value("packagechooser_packagechooser")
     
-    # Read the packages from the config file
-    with open("/tmp/desktop_packages.conf", "r") as f:
-        exec(f.read())
+    if not desktop_environment:
+        debug("No desktop environment selected, using default (xfce)")
+        desktop_environment = "xfce"
     
-    # Set the packages in the global storage
-    libcalamares.globalstorage.insert("packageOperations", [{"install": DESKTOP_PACKAGES.split()}])
+    # Define package lists for each desktop environment
+    desktop_packages = {
+        "xfce": [
+            "xfce4", "xfce4-goodies", "lightdm", "lightdm-gtk-greeter"
+        ],
+        "kde": [
+            "kde-plasma-desktop", "plasma-nm", "sddm"
+        ],
+        "gnome": [
+            "gnome-core", "gnome-shell", "gdm3"
+        ],
+        "lxde": [
+            "lxde", "lxde-core", "lightdm", "lightdm-gtk-greeter"
+        ],
+        "lxqt": [
+            "lxqt", "lxqt-core", "sddm"
+        ],
+        "mate": [
+            "mate-desktop-environment", "lightdm", "lightdm-gtk-greeter"
+        ],
+        "cinnamon": [
+            "cinnamon-desktop-environment", "lightdm", "lightdm-gtk-greeter"
+        ],
+        "budgie": [
+            "budgie-desktop", "lightdm", "lightdm-gtk-greeter"
+        ]
+    }
     
-    # Add a script to run after installation to set the display manager
-    libcalamares.job.setprogress(0.5)
+    # Get the packages for the selected desktop environment
+    packages = desktop_packages.get(desktop_environment, desktop_packages["xfce"])
     
-    # Create a script to set the display manager based on the desktop choice
-    script = [
-        "#!/bin/bash",
-        "# Run the display manager setup script",
-        "/usr/bin/set-display-manager"
-    ]
+    # Add the packages to the list of packages to install
+    libcalamares.globalstorage.insert("packageOperations", [
+        {
+            "install": packages
+        }
+    ])
     
-    # Add the script to the list of scripts to run
-    libcalamares.globalstorage.insert("postinstallCommands", ["\n".join(script)])
+    # Set the display manager based on the desktop environment
+    if desktop_environment in ["kde", "lxqt"]:
+        dm = "sddm"
+    elif desktop_environment == "gnome":
+        dm = "gdm3"
+    else:
+        dm = "lightdm"
+    
+    # Configure the display manager
+    try:
+        with open("/etc/X11/default-display-manager", "w") as f:
+            f.write(f"/usr/sbin/{dm}\n")
+    except Exception as e:
+        warning(f"Failed to set default display manager: {e}")
     
     return None

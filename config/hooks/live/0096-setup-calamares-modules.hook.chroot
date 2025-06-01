@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+
+echo "Setting up Calamares modules..."
+
+# Create modules directory if it doesn't exist
+mkdir -p /usr/lib/calamares/modules/desktop
+mkdir -p /usr/lib/calamares/modules/desktop-packages
+
+# Create module descriptor for desktop module
+cat > /usr/lib/calamares/modules/desktop/module.desc << MODULEDESC
+# Module descriptor for desktop module
+---
+type:       "job"
+name:       "desktop"
+interface:  "python"
+script:     "desktop.py"
+MODULEDESC
+
+# Create module descriptor for desktop-packages module
+cat > /usr/lib/calamares/modules/desktop-packages/module.desc << MODULEDESC
+# Module descriptor for desktop-packages module
+---
+type:       "job"
+name:       "desktop-packages"
+interface:  "python"
+script:     "desktop-packages.py"
+MODULEDESC
+
+# Copy the Python scripts to the modules directory
+cp /etc/calamares/modules/desktop.py /usr/lib/calamares/modules/desktop/
+cp /etc/calamares/modules/desktop-packages.py /usr/lib/calamares/modules/desktop-packages/
+
+# Make the scripts executable
+chmod +x /usr/lib/calamares/modules/desktop/desktop.py
+chmod +x /usr/lib/calamares/modules/desktop-packages/desktop-packages.py
+
+# Create module descriptor for packagechooser module if it doesn't exist
+if [ ! -d /usr/lib/calamares/modules/packagechooser ]; then
+    mkdir -p /usr/lib/calamares/modules/packagechooser
+    cat > /usr/lib/calamares/modules/packagechooser/module.desc << MODULEDESC
+# Module descriptor for packagechooser module
+---
+type:       "viewmodule"
+name:       "packagechooser"
+interface:  "qtplugin"
+load:       "libcalamares_viewmodule_packagechooser.so"
+MODULEDESC
+fi
+
+echo "Calamares modules setup completed."

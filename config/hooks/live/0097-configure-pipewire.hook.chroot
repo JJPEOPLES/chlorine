@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+
+echo "Configuring PipeWire audio system..."
+
+# Install PipeWire and related packages
+apt-get update
+apt-get install -y pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber pavucontrol
+
+# Remove PulseAudio if installed
+apt-get remove -y pulseaudio pulseaudio-utils pulseaudio-module-bluetooth
+
+# Create systemd user directory
+mkdir -p /etc/systemd/user/
+
+# Enable PipeWire services for all users
+mkdir -p /etc/systemd/user/default.target.wants/
+mkdir -p /etc/systemd/user/sockets.target.wants/
+
+# Create symlinks to enable PipeWire services
+ln -sf /usr/lib/systemd/user/pipewire.service /etc/systemd/user/default.target.wants/
+ln -sf /usr/lib/systemd/user/pipewire.socket /etc/systemd/user/sockets.target.wants/
+ln -sf /usr/lib/systemd/user/pipewire-pulse.service /etc/systemd/user/default.target.wants/
+ln -sf /usr/lib/systemd/user/pipewire-pulse.socket /etc/systemd/user/sockets.target.wants/
+ln -sf /usr/lib/systemd/user/wireplumber.service /etc/systemd/user/default.target.wants/
+
+# Create PipeWire configuration directory
+mkdir -p /etc/pipewire/
+
+# Copy default configuration files if they don't exist
+if [ ! -f /etc/pipewire/pipewire.conf ]; then
+  cp -n /usr/share/pipewire/pipewire.conf /etc/pipewire/
+fi
+
+if [ ! -f /etc/pipewire/pipewire-pulse.conf ]; then
+  cp -n /usr/share/pipewire/pipewire-pulse.conf /etc/pipewire/
+fi
+
+echo "PipeWire audio system configured successfully."

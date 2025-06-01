@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+# Install Plymouth and its dependencies
+apt-get update
+apt-get install -y plymouth plymouth-themes
+
+# Create the logo image directory if it doesn't exist
+mkdir -p /usr/share/plymouth/themes/chlorine
+
+# Copy the Chlorine logo to the Plymouth theme directory
+cp /usr/share/icons/hicolor/scalable/apps/chlorine-logo.svg /usr/share/plymouth/themes/chlorine/logo.png
+
+# Create a simple spinner image if it doesn't exist
+if [ ! -f /usr/share/plymouth/themes/chlorine/spinner.png ]; then
+  # Use a default spinner from another theme
+  cp /usr/share/plymouth/themes/spinner/throbber-*.png /usr/share/plymouth/themes/chlorine/spinner.png
+fi
+
+# Set Chlorine as the default Plymouth theme
+plymouth-set-default-theme chlorine
+
+# Update initramfs to include the Plymouth theme
+update-initramfs -u
+
+echo "Plymouth installation and configuration completed."

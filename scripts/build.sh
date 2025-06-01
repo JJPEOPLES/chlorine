@@ -1,6 +1,5 @@
 #!/bin/bash
-# Chlorine Linux Build Script
-
+# Chlorine Linux Installer Setup Script
 set -e
 
 # Colors
@@ -11,201 +10,111 @@ NC='\033[0m'
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-BUILD_DIR="$ROOT_DIR/build"
-CONFIG_DIR="$ROOT_DIR/config"
-ISO_DIR="$ROOT_DIR/iso"
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Create necessary directories
-mkdir -p "$BUILD_DIR"
-mkdir -p "$ISO_DIR"
+check_dependencies() {
+    log_info "Checking for required dependencies..."
 
-# Clean the build directory
-clean_build_directory() {
-    log_info "Cleaning build directory..."
-    cd "$BUILD_DIR"
-    lb clean --all
-    log_info "Build directory cleaned completely."
-}
+    local DEPS=(
+        "debootstrap"
+        "squashfs-tools"
+        "xorriso"
+        "isolinux"
+        "syslinux-utils"
+        "grub-pc-bin"
+        "grub-efi-amd64-bin"
+        "mtools"
+        "dosfstools"
+        "live-build"
+    )
 
-# Set up the build environment
-setup_build_environment() {
-    log_info "Setting up build environment..."
-    cd "$BUILD_DIR"
-    
-    # Initialize live-build configuration
-    log_info "Initializing live-build configuration..."
-    lb config \
-        --distribution bookworm \
-        --archive-areas "main contrib non-free non-free-firmware" \
-        --apt-indices false \
-        --apt-recommends false \
-        --debian-installer none \
-        --mirror-bootstrap "http://deb.debian.org/debian/" \
-        --mirror-binary "http://deb.debian.org/debian/" \
-        --mirror-binary-security "http://security.debian.org/debian-security/" \
-        --mirror-chroot "http://deb.debian.org/debian/" \
-        --mirror-chroot-security "http://security.debian.org/debian-security/" \
-        --debootstrap-options "--keyring=/usr/share/keyrings/debian-archive-keyring.gpg" \
-        --binary-filesystem ext4 \
-        --binary-images iso-hybrid
-    
-    # Set compression to gzip (valid values are gzip, bzip2, lzma, xz)
-    export LB_COMPRESSION="gzip"
-    
-    # Verify that the configuration was created
-    if [ ! -f "config/binary" ]; then
-        log_error "Failed to create live-build configuration."
-        exit 1
-    fi
-    
-    # Copy our custom configurations
-    log_info "Adding custom configurations..."
-    if [ -d "$CONFIG_DIR" ]; then
-        cp -r "$CONFIG_DIR"/* "$BUILD_DIR"/config/
-    fi
-    
-    # Update binary configuration for squashfs
-    log_info "Configuring squashfs options..."
-    if [ -f "$BUILD_DIR/config/binary" ]; then
-        # Add squashfs options if not already present
-        if ! grep -q "LB_SQUASHFS_COMP_OPT" "$BUILD_DIR/config/binary"; then
-            echo '# Set squashfs compression options (512K block size for better performance)' >> "$BUILD_DIR/config/binary"
-            echo 'LB_SQUASHFS_COMP_OPT="-b 512K -Xcompression-level 9"' >> "$BUILD_DIR/config/binary"
+    local MISSING=()
+    for dep in "${DEPS[@]}"; do
+        if ! command -v "$dep" &> /dev/null && ! dpkg -l | grep -q "$dep"; then
+            MISSING+=("$dep")
         fi
-    fi
-    
-    # Create squashfs configuration directory
-    mkdir -p "$BUILD_DIR/config/includes.chroot_after_packages/etc/"
-    
-    # Create squashfs configuration file
-    log_info "Creating squashfs configuration file..."
-    cat > "$BUILD_DIR/config/includes.chroot_after_packages/etc/mksquashfs.conf" << EOL
-# Squashfs configuration for Chlorine Linux
-# This file configures mksquashfs to use a 512K block size for better performance
+    done
 
-# Use 512K block size
--b 512K
-
-# Use maximum compression level
--Xcompression-level 9
-
-# Use all available processors for compression
--processors 0
-EOL
-    
-    # Create hooks directory
-    mkdir -p "$BUILD_DIR/config/hooks/live/"
-    
-    # Create squashfs hook
-    log_info "Creating squashfs hook..."
-    cat > "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot" << EOL
-#!/bin/bash
-# Configure squashfs options for Chlorine Linux
-
-set -e
-
-# Create directory if it doesn't exist
-mkdir -p /etc
-
-# Create mksquashfs.conf with 512K block size
-cat > /etc/mksquashfs.conf << EOLINNER
-# Squashfs configuration for Chlorine Linux
-# This file configures mksquashfs to use a 512K block size for better performance
-
-# Use 512K block size
--b 512K
-
-# Use maximum compression level
--Xcompression-level 9
-
-# Use all available processors for compression
--processors 0
-EOLINNER
-
-echo "SquashFS configured with 512K block size for better performance."
-EOL
-    chmod +x "$BUILD_DIR/config/hooks/live/0020-configure-squashfs.hook.chroot"
-    
-    # Verify that the configuration is valid
-    log_info "Verifying configuration..."
-    if ! lb config --quiet; then
-        log_error "Invalid live-build configuration."
-        exit 1
-    fi
-    
-    log_info "Build environment set up successfully."
-}
-
-# Configure the ISO
-configure_iso() {
-    log_info "Configuring ISO..."
-    # Add any ISO configuration steps here
-}
-
-# Build the ISO
-build_iso() {
-    log_info "Building ISO..."
-    cd "$BUILD_DIR"
-    
-    # Run lb build to create the ISO
-    if lb build; then
-        # Copy the ISO to the output directory
-        if [ -f "$BUILD_DIR/live-image-amd64.hybrid.iso" ]; then
-            cp "$BUILD_DIR/live-image-amd64.hybrid.iso" "$ISO_DIR/chlorine-linux.iso"
-            log_info "ISO created successfully: $ISO_DIR/chlorine-linux.iso"
+    if [ ${#MISSING[@]} -ne 0 ]; then
+        log_warn "Missing dependencies: ${MISSING[*]}"
+        read -p "Do you want to install the missing dependencies? (y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            apt-get update
+            apt-get install -y "${MISSING[@]}"
         else
-            log_error "ISO file not found after build."
+            log_error "Cannot continue without required dependencies."
             exit 1
         fi
+    fi
+
+    log_info "All dependencies are installed."
+}
+
+make_scripts_executable() {
+    log_info "Making scripts executable..."
+    if [ -d "/home/jjshandy6161/Desktop/chlorine/scripts" ]; then
+        chmod +x /home/jjshandy6161/Desktop/chlorine/scripts/*.sh
+        log_info "Scripts are now executable."
     else
-        log_error "Failed to build ISO."
+        log_warn "Scripts directory not found. Skipping script permission changes."
+    fi
+}
+
+run_build() {
+    log_info "Starting build process..."
+    
+    log_info "Running build-accessible.sh script..."
+    if [ -f "$SCRIPT_DIR/build-accessible.sh" ]; then
+        # Make sure the script is executable
+        chmod +x "$SCRIPT_DIR/build-accessible.sh"
+        
+        # Run the build-accessible.sh script
+        bash "$SCRIPT_DIR/build-accessible.sh"
+        
+        # Check if the build was successful
+        if [ $? -eq 0 ]; then
+            log_info "Build process completed successfully."
+        else
+            log_warn "Build process completed with errors. Check the logs for details."
+        fi
+    else
+        log_error "build-accessible.sh not found in scripts directory. Cannot continue."
         exit 1
     fi
 }
 
-# Main function
-main() {
-    log_info "Starting Chlorine Linux build process..."
-    
-    # Clean the build directory
-    clean_build_directory
-    
-    # Set up the build environment
-    setup_build_environment
-    
-    # Run lb config to ensure the configuration is properly set up
-    cd "$BUILD_DIR"
-    log_info "Verifying configuration..."
-    lb config
-    
-    # Configure the ISO
-    configure_iso
-    
-    # Run the customize-installer script to set up Calamares
-    if [ -f "$SCRIPT_DIR/customize-installer.sh" ]; then
-        log_info "Setting up Calamares installer..."
-        bash "$SCRIPT_DIR/customize-installer.sh"
-    else
-        log_warn "customize-installer.sh not found. Skipping Calamares setup."
-    fi
-    
-    # Run lb config again to ensure all configuration is properly set up
-    cd "$BUILD_DIR"
-    log_info "Finalizing configuration..."
-    lb config \
-        --binary-filesystem ext4 \
-        --binary-images iso-hybrid
-    
-    # Build the ISO
-    build_iso
-    
-    log_info "Chlorine Linux build process completed successfully."
+show_completion() {
+    log_info "Chlorine Linux build completed successfully!"
+    log_info "The ISO file is available at: /home/jjshandy6161/Desktop/chlorine/iso/chlorine-linux.iso"
+    log_info ""
+    log_info "This build includes the K2 programming language (https://k2lang.org)"
+    log_info "After booting, you can run K2 programs with the 'k2' command."
+    log_info "A sample program is available at /usr/local/share/k2/examples/hello.k2"
+    log_info ""
+    log_info "You can burn this ISO to a USB drive using:"
+    log_info "  dd if=/home/jjshandy6161/Desktop/chlorine/iso/chlorine-linux.iso of=/dev/sdX bs=512K status=progress"
+    log_info "  (Replace /dev/sdX with your USB drive device)"
+    log_info ""
+    log_info "For faster writes on modern systems, you can use larger block sizes:"
+    log_info "  dd if=/home/jjshandy6161/Desktop/chlorine/iso/chlorine-linux.iso of=/dev/sdX bs=1M status=progress"
+    log_info "  dd if=/home/jjshandy6161/Desktop/chlorine/iso/chlorine-linux.iso of=/dev/sdX bs=4M status=progress"
+    log_info "  dd if=/home/jjshandy6161/Desktop/chlorine/iso/chlorine-linux.iso of=/dev/sdX bs=8M status=progress"
+    log_info ""
+    log_info "Or test it in a virtual machine:"
+    log_info "  qemu-system-x86_64 -cdrom /home/jjshandy6161/Desktop/chlorine/iso/chlorine-linux.iso -m 2G"
 }
 
-# Run the main function
+main() {
+    log_info "Welcome to Chlorine Linux installer"
+    log_info "This build will include the K2 programming language (https://k2lang.org)"
+    check_dependencies
+    make_scripts_executable
+    run_build
+    show_completion
+}
+
 main "$@"

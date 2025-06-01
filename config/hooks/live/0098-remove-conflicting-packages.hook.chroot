@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+echo "Removing conflicting packages..."
+
+# Remove pulseaudio and gnome-core if installed
+apt-get remove -y pulseaudio pulseaudio-utils pulseaudio-module-bluetooth gnome-core || true
+
+# Install pipewire and related packages
+apt-get install -y pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber pavucontrol || true
+
+echo "Conflicting packages removed."

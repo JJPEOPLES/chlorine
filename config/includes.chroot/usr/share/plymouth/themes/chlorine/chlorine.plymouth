@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Chlorine
+Description=Chlorine Linux Boot Splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/chlorine
+ScriptFile=/usr/share/plymouth/themes/chlorine/chlorine.script

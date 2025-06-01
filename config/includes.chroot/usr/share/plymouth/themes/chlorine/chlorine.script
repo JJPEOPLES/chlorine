@@ -1,0 +1,42 @@
+// Chlorine Plymouth Script
+// Simple boot splash with logo and spinner
+
+// Screen size
+Window.SetBackgroundTopColor(0.00, 0.00, 0.00);    // Black
+Window.SetBackgroundBottomColor(0.00, 0.00, 0.00);  // Black
+
+// Logo image
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(Window.GetWidth() / 2 - logo.image.GetWidth() / 2);
+logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2);
+logo.sprite.SetOpacity(1);
+
+// Spinner
+spinner_image = Image("spinner.png");
+spinner_sprite = Sprite(spinner_image);
+spinner_sprite.SetX(Window.GetWidth() / 2 - spinner_image.GetWidth() / 2);
+spinner_sprite.SetY(Window.GetHeight() / 2 + logo.image.GetHeight() / 2 + 50);
+
+// Spinner animation
+spinner_angle = 0;
+fun refresh_callback() {
+    spinner_angle += 10;  // Rotate by 10 degrees each time
+    if (spinner_angle >= 360) spinner_angle = 0;
+    spinner_sprite.SetImage(spinner_image.Rotate(spinner_angle));
+    spinner_sprite.SetOpacity(1);
+}
+
+Plymouth.SetRefreshFunction(refresh_callback);
+
+// Message display
+message_sprite = Sprite();
+message_sprite.SetPosition(Window.GetWidth() / 2, Window.GetHeight() - 40);
+
+fun message_callback(text) {
+    message_image = Image.Text(text, 1, 1, 1);  // White text
+    message_sprite.SetImage(message_image);
+    message_sprite.SetX(Window.GetWidth() / 2 - message_image.GetWidth() / 2);
+}
+
+Plymouth.SetMessageFunction(message_callback);

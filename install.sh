@@ -69,12 +69,12 @@ run_build() {
     log_info "Starting build process..."
     
     # Run the build script
-    if [ -f "$SCRIPT_DIR/scripts/build-fixed.sh" ]; then
-        log_info "Running build script..."
-        bash "$SCRIPT_DIR/scripts/build.sh"
+    if [ -f "$SCRIPT_DIR/scripts/build-accessible.sh" ]; then
+        log_info "Running build-accessible script..."
+        bash "$SCRIPT_DIR/scripts/build-accessible.sh"
         log_info "Build process completed."
     else
-        log_error "build.sh not found in scripts directory. Cannot continue."
+        log_error "build-accessible.sh not found in scripts directory. Cannot continue."
         exit 1
     fi
 }

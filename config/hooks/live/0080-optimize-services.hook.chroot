@@ -1,0 +1,55 @@
+#!/bin/bash
+set -e
+
+echo "Optimizing system services for faster boot..."
+
+# Disable unnecessary services
+SERVICES_TO_DISABLE=(
+  "apt-daily.service"
+  "apt-daily.timer"
+  "apt-daily-upgrade.timer"
+  "apt-daily-upgrade.service"
+  "fstrim.timer"
+  "man-db.timer"
+  "logrotate.timer"
+  "e2scrub_all.timer"
+  "e2scrub_reap.service"
+)
+
+for service in "${SERVICES_TO_DISABLE[@]}"; do
+  if systemctl list-unit-files | grep -q "$service"; then
+    echo "Disabling $service"
+    systemctl disable "$service" || true
+  fi
+done
+
+# Configure NetworkManager to start faster
+if [ -d /etc/NetworkManager ]; then
+  echo "Optimizing NetworkManager..."
+  mkdir -p /etc/NetworkManager/conf.d/
+  cat > /etc/NetworkManager/conf.d/99-fast-startup.conf << NMCONF
+[main]
+no-auto-default=*
+NMCONF
+fi
+
+# Reduce systemd timeout
+if [ -d /etc/systemd ]; then
+  echo "Reducing systemd timeout..."
+  mkdir -p /etc/systemd/system.conf.d/
+  cat > /etc/systemd/system.conf.d/timeout.conf << TIMEOUTCONF
+[Manager]
+DefaultTimeoutStartSec=15s
+DefaultTimeoutStopSec=15s
+TIMEOUTCONF
+fi
+
+# Optimize GRUB for faster boot
+if [ -f /etc/default/grub ]; then
+  echo "Optimizing GRUB settings..."
+  sed -i 's/GRUB_TIMEOUT=5/GRUB_TIMEOUT=1/' /etc/default/grub
+  sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="quiet"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+  update-grub || true
+fi
+
+echo "Service optimization completed."

@@ -1,24 +1,65 @@
 #!/bin/bash
+# Script to ensure desktop packages are installed
 
-# This script sets up the desktop packages based on the user's selection in Calamares
+# Default desktop environment
+DEFAULT_DE="xfce"
 
-# Get the selected desktop environment from Calamares
-DESKTOP_ENV=$(cat /tmp/desktop_choice 2>/dev/null || echo "kde")
+# Function to install packages
+install_packages() {
+    local packages="$1"
+    apt-get update
+    apt-get install -y $packages
+}
 
-# Set the packages based on the desktop environment
-case "$DESKTOP_ENV" in
+# Install desktop environment packages based on selection
+case "$1" in
+    xfce)
+        install_packages "xfce4 xfce4-goodies lightdm lightdm-gtk-greeter"
+        ;;
     kde)
-        PACKAGES="plasma-desktop sddm konsole dolphin kate kwrite ark gwenview okular"
+        install_packages "kde-plasma-desktop plasma-nm sddm"
         ;;
     gnome)
-        PACKAGES="gnome-shell gdm3 gnome-terminal nautilus gedit eog evince"
+        install_packages "gnome-core gnome-shell gdm3"
         ;;
-    xfce|*)
-        PACKAGES="xfce4 xfce4-terminal thunar mousepad ristretto xfce4-screenshooter"
+    lxde)
+        install_packages "lxde lxde-core lightdm lightdm-gtk-greeter"
+        ;;
+    lxqt)
+        install_packages "lxqt lxqt-core sddm"
+        ;;
+    mate)
+        install_packages "mate-desktop-environment lightdm lightdm-gtk-greeter"
+        ;;
+    cinnamon)
+        install_packages "cinnamon-desktop-environment lightdm lightdm-gtk-greeter"
+        ;;
+    budgie)
+        install_packages "budgie-desktop lightdm lightdm-gtk-greeter"
+        ;;
+    *)
+        echo "No desktop environment specified, installing default ($DEFAULT_DE)"
+        install_packages "xfce4 xfce4-goodies lightdm lightdm-gtk-greeter"
         ;;
 esac
 
-# Export the packages for Calamares to use
-echo "DESKTOP_PACKAGES=\"$PACKAGES\"" > /tmp/desktop_packages.conf
+# Ensure display manager is properly configured
+if [ -f /etc/X11/default-display-manager ]; then
+    case "$1" in
+        kde|lxqt)
+            echo "/usr/sbin/sddm" > /etc/X11/default-display-manager
+            ;;
+        gnome)
+            echo "/usr/sbin/gdm3" > /etc/X11/default-display-manager
+            ;;
+        *)
+            echo "/usr/sbin/lightdm" > /etc/X11/default-display-manager
+            ;;
+    esac
+fi
 
-echo "Desktop packages set to: $PACKAGES"
+# Enable the display manager service
+systemctl enable $(basename $(cat /etc/X11/default-display-manager))
+
+echo "Desktop environment setup completed."
+exit 0
